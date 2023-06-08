@@ -15,7 +15,6 @@
 #include <chrono>
 #include <math.h>
 #include <algorithm>
-#include <bitset>
 
 using namespace std;
 
@@ -27,7 +26,7 @@ int numThreads = 0;
 
 // function declarations
 void findPrimes(int threadId);
-void printPrimes(const vector<int> &primes);
+void printPrimes(const vector<int>& primes);
 void printTime(chrono::high_resolution_clock::time_point start, chrono::high_resolution_clock::time_point stop);
 
 int main(int argc, char *argv[])
@@ -46,7 +45,7 @@ int main(int argc, char *argv[])
     primesPerThread.resize(numThreads);
     for (int i = 0; i < numThreads; i++)
     {
-        threads.push_back(thread([i] { findPrimes(i); }));
+        threads.push_back(thread([i](){ findPrimes(i); }));
     }
 
     // join threads
@@ -78,39 +77,54 @@ void findPrimes(int threadId)
     int i = 0;
     int j = 0;
     int prime = 0;
-    int limit = sqrt(maxNumber);
-
-    // create bitset to mark composite numbers
-    bitset<1000000> isComposite;
-    isComposite.reset();
+    int limit = 0;
 
     while (true)
     {
         // get next number to test
         i = counter.fetch_add(1);
-        if (i > limit)
+        if (i > maxNumber)
         {
             break;
         }
 
         // check if number is prime
-        if (isComposite[i])
+        if (i == 1)
         {
+            // 1 is not prime
             continue;
         }
-
-        prime = 1;
-        for (j = i * i; j <= maxNumber; j += i)
+        if (i == 2)
         {
-            isComposite[j] = 1;
+            // 2 is prime
+            primesPerThread[threadId].push_back(i);
+            continue;
+        }
+        if (i % 2 == 0)
+        {
+            // even numbers are not prime
+            continue;
+        }
+        prime = 1;
+        limit = sqrt(i);
+        for (j = 3; j <= limit; j += 2)
+        {
+            if (i % j == 0)
+            {
+                prime = 0;
+                break;
+            }
         }
 
         // add prime to vector
-        primesPerThread[threadId].push_back(i);
+        if (prime == 1)
+        {
+            primesPerThread[threadId].push_back(i);
+        }
     }
 }
 
-void printPrimes(const vector<int> &primes)
+void printPrimes(const vector<int>& primes)
 {
     cout << "Primes: ";
     for (auto &prime : primes)
