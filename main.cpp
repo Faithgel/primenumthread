@@ -15,6 +15,7 @@
 #include <chrono>
 #include <math.h>
 #include <algorithm>
+#include <unistd.h>
 
 using namespace std;
 
@@ -27,7 +28,7 @@ int numThreads = 0;
 // function declarations
 void findPrimes(int threadId);
 void printPrimes(const vector<int>& primes);
-void printTime(chrono::high_resolution_clock::time_point start, chrono::high_resolution_clock::time_point stop);
+int64_t getDuration(chrono::high_resolution_clock::time_point start, chrono::high_resolution_clock::time_point stop);
 
 int main(int argc, char *argv[])
 {
@@ -40,36 +41,45 @@ int main(int argc, char *argv[])
     cout << "Threads: " << numThreads << endl;
     cout << "Max Number: " << maxNumber << endl;
 
-    // start timer
-    auto start = chrono::high_resolution_clock::now();
+    //Checkear tiempo promedio de ejecucion 35 veces para tener un promedio estable
+    
+    int64_t avgTime = 0;
 
-    // create threads
-    vector<thread> threads;
-    primesPerThread.resize(numThreads);
-    for (int i = 0; i < numThreads; i++)
-    {
-        threads.push_back(thread([i](){ findPrimes(i); }));
+    for (int k = 0; k < 35; k++){
+        // start timer
+        auto start = chrono::high_resolution_clock::now();
+
+        // create threads
+        vector<thread> threads;
+        primesPerThread.resize(numThreads);
+        for (int i = 0; i < numThreads; i++)
+        {
+            threads.push_back(thread([i](){ findPrimes(i); }));
+        }
+
+        // join threads
+        for (auto &th : threads)
+        {
+            th.join();
+        }
+
+        // combine prime vectors
+        vector<int> primes;
+        for (auto &primeThread : primesPerThread)
+        {
+            primes.insert(primes.end(), primeThread.begin(), primeThread.end());
+        }
+
+        // stop timer
+        auto stop = chrono::high_resolution_clock::now();
+
+        avgTime += getDuration(start, stop);
+
     }
 
-    // join threads
-    for (auto &th : threads)
-    {
-        th.join();
-    }
+    avgTime = avgTime / 35;
 
-    // combine prime vectors
-    vector<int> primes;
-    for (auto &primeThread : primesPerThread)
-    {
-        primes.insert(primes.end(), primeThread.begin(), primeThread.end());
-    }
-
-    // stop timer
-    auto stop = chrono::high_resolution_clock::now();
-
-    // print results
-    printPrimes(primes);
-    printTime(start, stop);
+    cout << "Average time: " << avgTime << " microseconds" << endl;
 
     return 0;
 }
@@ -137,9 +147,8 @@ void printPrimes(const vector<int>& primes)
     cout << endl;
 }
 
-void printTime(chrono::high_resolution_clock::time_point start, chrono::high_resolution_clock::time_point stop)
+int64_t getDuration(chrono::high_resolution_clock::time_point start, chrono::high_resolution_clock::time_point stop) 
 {
-    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "Time: " << duration.count() << " microseconds" << endl;
+    return chrono::duration_cast<chrono::microseconds>(stop - start).count();
 }
 
