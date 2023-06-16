@@ -32,10 +32,13 @@ void printTime(chrono::high_resolution_clock::time_point start, chrono::high_res
 int main(int argc, char *argv[])
 {
     // get user input
-    cout << "Ingresa el número hasta el cual quieres encontrar primos: ";
-    cin >> maxNumber;
-    cout << "Ingresa el número de hilos: ";
-    cin >> numThreads;
+    maxNumber = pow(10, 6);
+    //Obtener el numero de hilos desde los argumentos de la linea de comandos
+    numThreads = atoi(argv[1]);
+
+    //Imprimir el numero de hilos y el numero maximo a calcular
+    cout << "Threads: " << numThreads << endl;
+    cout << "Max Number: " << maxNumber << endl;
 
     // start timer
     auto start = chrono::high_resolution_clock::now();
